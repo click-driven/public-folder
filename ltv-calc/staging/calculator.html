@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Lifetime Value (LTV) Calculator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+    .calculator-container { background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.08); max-width: 480px; width: 100%; }
+    h2 { color: #1a202c; margin-bottom: 6px; font-size: 1.5rem; }
+    .subtitle { color: #718096; font-size: 0.875rem; margin-bottom: 20px; }
+    .input-group { margin-bottom: 16px; }
+    label { display: block; font-size: 0.875rem; font-weight: 600; color: #2d3748; margin-bottom: 6px; }
+    input { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 1rem; }
+    button { width: 100%; padding: 12px; background-color: #3182ce; color: white; border: none; border-radius: 6px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 10px; }
+    button:hover { background-color: #2b6cb0; }
+    .results-container { margin-top: 24px; padding-top: 20px; border-top: 1px solid #e2e8f0; }
+    .result-card { display: flex; justify-content: space-between; align-items: center; padding: 12px; background-color: #f7fafc; border-radius: 6px; margin-bottom: 8px; font-size: 0.95rem; color: #4a5568; }
+    .result-card.highlight { background-color: #ebf8ff; border-left: 4px solid #3182ce; }
+    .result-card strong { font-size: 1.1rem; color: #1a202c; }
+  </style>
+</head>
+<body>
+  <div class="calculator-container">
+    <h2>Customer Lifetime Value (LTV) Calculator</h2>
+    <p class="subtitle">Calculate net customer value based on revenue, costs, churn, and discount rate.</p>
+    
+    <form id="ltv-form">
+      <div class="input-group">
+        <label for="annualRevenue">Annual Revenue per Customer ($)</label>
+        <input type="number" id="annualRevenue" value="1800" step="0.01">
+      </div>
+      <div class="input-group">
+        <label for="productCost">Annual Product/Service Cost ($)</label>
+        <input type="number" id="productCost" value="1080" step="0.01">
+      </div>
+      <div class="input-group">
+        <label for="cac">Customer Acquisition Cost (CAC) ($)</label>
+        <input type="number" id="cac" value="50" step="0.01">
+      </div>
+      <div class="input-group">
+        <label for="churnRate">Annual Churn Rate (%)</label>
+        <input type="number" id="churnRate" value="30" step="0.1">
+      </div>
+      <div class="input-group">
+        <label for="discountRate">Annual Discount Rate (%)</label>
+        <input type="number" id="discountRate" value="10" step="0.1">
+      </div>
+      <div class="input-group">
+        <label for="timeHorizon">Time Horizon (Years)</label>
+        <input type="number" id="timeHorizon" value="5" min="1" max="20">
+      </div>
+      <button type="button" onclick="calculateLTV()">Calculate LTV</button>
+    </form>
+
+    <div class="results-container" id="results">
+      <h3>Results</h3>
+      <div class="result-card">
+        <span>Simple LTV:</span>
+        <strong id="simpleLTV">$0.00</strong>
+      </div>
+      <div class="result-card highlight">
+        <span>NPV Discounted LTV:</span>
+        <strong id="npvLTV">$0.00</strong>
+      </div>
+      <div class="result-card">
+        <span>LTV : CAC Ratio:</span>
+        <strong id="ltvCacRatio">0.0x</strong>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function calculateLTV() {
+      const revenue = parseFloat(document.getElementById('annualRevenue').value) || 0;
+      const cost = parseFloat(document.getElementById('productCost').value) || 0;
+      const cac = parseFloat(document.getElementById('cac').value) || 0;
+      const churnRate = (parseFloat(document.getElementById('churnRate').value) || 0) / 100;
+      const discountRate = (parseFloat(document.getElementById('discountRate').value) || 0) / 100;
+      const years = parseInt(document.getElementById('timeHorizon').value) || 1;
+
+      const annualMargin = revenue - cost;
+
+      let simpleLTV = churnRate > 0 ? (annualMargin / churnRate) - cac : 0;
+
+      let npvLTV = -cac;
+      let activeProbability = 1.0;
+
+      for (let year = 1; year <= years; year++) {
+        activeProbability *= (1 - churnRate);
+        const expectedProfit = annualMargin * activeProbability;
+        const presentValue = expectedProfit / Math.pow(1 + discountRate, year);
+        npvLTV += presentValue;
+      }
+
+      const ltvCacRatio = cac > 0 ? (npvLTV / cac) : 0;
+
+      document.getElementById('simpleLTV').textContent = '$' + simpleLTV.toFixed(2);
+      document.getElementById('npvLTV').textContent = '$' + npvLTV.toFixed(2);
+      document.getElementById('ltvCacRatio').textContent = ltvCacRatio.toFixed(1) + 'x';
+    }
+
+    window.onload = calculateLTV;
+  </script>
+</body>
+</html>

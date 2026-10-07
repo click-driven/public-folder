@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer LTV Calculator - Basic & Advanced</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: #f4f7f6; padding: 30px 15px; color: #2d3748; }
+    .calculator-card { background: #ffffff; max-width: 900px; margin: 0 auto; padding: 30px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+    h2 { margin-bottom: 8px; font-size: 1.6rem; }
+    p.subtitle { color: #718096; font-size: 0.9rem; margin-bottom: 20px; }
+    
+    /* Mode Navigation Tabs */
+    .nav-tabs { display: flex; border-bottom: 2px solid #e2e8f0; margin-bottom: 24px; }
+    .tab-btn { padding: 10px 20px; border: none; background: none; font-weight: 600; font-size: 0.95rem; color: #718096; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; }
+    .tab-btn.active { color: #3182ce; border-bottom-color: #3182ce; }
+
+    /* Form Layouts */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    .form-group { margin-bottom: 14px; }
+    label { display: block; font-size: 0.825rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #4a5568; margin-bottom: 6px; }
+    input { width: 100%; padding: 9px 12px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 0.95rem; }
+    .help-text { font-size: 0.75rem; color: #a0aec0; margin-top: 4px; }
+
+    button.calc-btn { width: 100%; padding: 12px; background-color: #3182ce; color: white; border: none; border-radius: 6px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 15px; transition: background 0.2s; }
+    button.calc-btn:hover { background-color: #2b6cb0; }
+
+    /* Results Dashboard */
+    .results-panel { margin-top: 28px; padding-top: 20px; border-top: 1px solid #e2e8f0; }
+    .metrics-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .metric-card { background: #f7fafc; padding: 16px; border-radius: 8px; border-left: 4px solid #cbd5e0; }
+    .metric-card.accent { border-left-color: #3182ce; background: #ebf8ff; }
+    .metric-card.success { border-left-color: #38a169; background: #f0fff4; }
+    .metric-card span { display: block; font-size: 0.8rem; text-transform: uppercase; color: #718096; font-weight: 600; }
+    .metric-card strong { font-size: 1.4rem; color: #1a202c; display: block; margin-top: 4px; }
+
+    /* Tables */
+    .table-container { overflow-x: auto; margin-top: 16px; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.875rem; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; }
+    th { background-color: #f7fafc; color: #4a5568; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<div class="calculator-card">
+  <h2>Customer LTV Calculator</h2>
+  <p class="subtitle">Evaluate baseline metrics or compare multi-segment customer cohorts over variable churn schedules.</p>
+
+  <!-- Mode Selector -->
+  <div class="nav-tabs">
+    <button class="tab-btn active" id="tab-basic" onclick="switchMode('basic')">Basic Mode</button>
+    <button class="tab-btn" id="tab-advanced" onclick="switchMode('advanced')">Advanced Comparison Mode</button>
+  </div>
+
+  <!-- BASIC MODE FORM -->
+  <div id="mode-basic">
+    <div class="grid-3">
+      <div class="form-group">
+        <label>Monthly ARPU ($)</label>
+        <input type="number" id="b-arpu" value="32.67" step="0.01">
+      </div>
+      <div class="form-group">
+        <label>Monthly Service Cost ($)</label>
+        <input type="number" id="b-cost" value="0.50" step="0.01">
+      </div>
+      <div class="form-group">
+        <label>Upfront CAC ($)</label>
+        <input type="number" id="b-cac" value="0" step="0.01">
+      </div>
+      <div class="form-group">
+        <label>Annual Churn Rate (%)</label>
+        <input type="number" id="b-churn" value="8.4" step="0.1">
+      </div>
+      <div class="form-group">
+        <label>Annual Discount Rate (%)</label>
+        <input type="number" id="b-discount" value="10" step="0.1">
+      </div>
+      <div class="form-group">
+        <label>Time Horizon (Years)</label>
+        <input type="number" id="b-horizon" value="8" min="1" max="15">
+      </div>
+    </div>
+    <button class="calc-btn" onclick="calculateBasic()">Calculate Basic LTV</button>
+  </div>
+
+  <!-- ADVANCED MODE FORM -->
+  <div id="mode-advanced" style="display: none;">
+    <div class="grid-3" style="margin-bottom: 15px;">
+      <div class="form-group">
+        <label>Annual Discount Rate (%)</label>
+        <input type="number" id="a-discount" value="10" step="0.1">
+      </div>
+      <div class="form-group">
+        <label>Time Horizon (Years)</label>
+        <input type="number" id="a-horizon" value="8" min="1" max="12" onchange="adjustYears()">
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <!-- Segment A -->
+      <div style="background: #faf5ff; padding: 16px; border-radius: 8px; border: 1px solid #e9d8fd;">
+        <h4 style="margin-bottom: 12px; color: #6b46c1;">Segment A (e.g., Auto Pay)</h4>
+        <div class="form-group">
+          <label>Monthly ARPU ($)</label>
+          <input type="number" id="segA-arpu" value="32.67" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Monthly Cost ($)</label>
+          <input type="number" id="segA-cost" value="0.50" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Upfront CAC ($)</label>
+          <input type="number" id="segA-cac" value="0" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Annual Churn Schedule (%)</label>
+          <input type="text" id="segA-churns" value="3.2, 7.0, 9.7, 10.3, 9.5, 7.8, 6.9, 5.9">
+          <div class="help-text">Comma-separated churn % per year (1 to N)</div>
+        </div>
+      </div>
+
+      <!-- Segment B -->
+      <div style="background: #fffaf0; padding: 16px; border-radius: 8px; border: 1px solid #feebc8;">
+        <h4 style="margin-bottom: 12px; color: #c05621;">Segment B (e.g., No Auto Pay)</h4>
+        <div class="form-group">
+          <label>Monthly ARPU ($)</label>
+          <input type="number" id="segB-arpu" value="30.64" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Monthly Cost ($)</label>
+          <input type="number" id="segB-cost" value="0.50" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Upfront CAC ($)</label>
+          <input type="number" id="segB-cac" value="0" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Annual Churn Schedule (%)</label>
+          <input type="text" id="segB-churns" value="8.4, 12.2, 16.2, 15.4, 13.4, 12.0, 11.1, 9.6">
+          <div class="help-text">Comma-separated churn % per year (1 to N)</div>
+        </div>
+      </div>
+    </div>
+    <button class="calc-btn" onclick="calculateAdvanced()">Compare Customer Segments</button>
+  </div>
+
+  <!-- RESULTS SECTION -->
+  <div class="results-panel" id="results" style="display: none;">
+    <h3>Calculation Summary</h3>
+    <div class="metrics-summary" id="metrics-output"></div>
+    <div class="table-container" id="table-output"></div>
+  </div>
+</div>
+
+<script>
+  let currentMode = 'basic';
+
+  function switchMode(mode) {
+    currentMode = mode;
+    document.getElementById('tab-basic').classList.toggle('active', mode === 'basic');
+    document.getElementById('tab-advanced').classList.toggle('active', mode === 'advanced');
+    document.getElementById('mode-basic').style.display = mode === 'basic' ? 'block' : 'none';
+    document.getElementById('mode-advanced').style.display = mode === 'advanced' ? 'block' : 'none';
+    document.getElementById('results').style.display = 'none';
+  }
+
+  function calculateBasic() {
+    const arpu = parseFloat(document.getElementById('b-arpu').value) || 0;
+    const cost = parseFloat(document.getElementById('b-cost').value) || 0;
+    const cac = parseFloat(document.getElementById('b-cac').value) || 0;
+    const churn = (parseFloat(document.getElementById('b-churn').value) || 0) / 100;
+    const discount = (parseFloat(document.getElementById('b-discount').value) || 0) / 100;
+    const horizon = parseInt(document.getElementById('b-horizon').value) || 1;
+
+    const annualMargin = (arpu - cost) * 12;
+    let npvLTV = -cac;
+    let activeProb = 1.0;
+    let rowsHTML = '';
+
+    for (let yr = 1; yr <= horizon; yr++) {
+      activeProb *= (1 - churn);
+      const expectedProfit = annualMargin * activeProb;
+      const pv = expectedProfit / Math.pow(1 + discount, yr);
+      npvLTV += pv;
+
+      rowsHTML += `<tr>
+        <td>Year ${yr}</td>
+        <td>${(churn * 100).toFixed(2)}%</td>
+        <td>${(activeProb * 100).toFixed(2)}%</td>
+        <td>$${expectedProfit.toFixed(2)}</td>
+        <td>$${pv.toFixed(2)}</td>
+      </tr>`;
+    }
+
+    document.getElementById('metrics-output').innerHTML = `
+      <div class="metric-card accent">
+        <span>Discounted LTV (NPV)</span>
+        <strong>$${npvLTV.toFixed(2)}</strong>
+      </div>
+      <div class="metric-card">
+        <span>Annual Margin / Customer</span>
+        <strong>$${annualMargin.toFixed(2)}</strong>
+      </div>
+    `;
+
+    document.getElementById('table-output').innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>Year</th><th>Churn Rate</th><th>P(Active)</th><th>Expected Profit</th><th>Present Value</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHTML}</tbody>
+      </table>`;
+    
+    document.getElementById('results').style.display = 'block';
+  }
+
+  function parseSchedule(inputStr, length) {
+    const arr = inputStr.split(',').map(v => parseFloat(v.trim()) / 100 || 0);
+    while (arr.length < length) arr.push(arr[arr.length - 1] || 0);
+    return arr.slice(0, length);
+  }
+
+  function calculateAdvanced() {
+    const horizon = parseInt(document.getElementById('a-horizon').value) || 1;
+    const discount = (parseFloat(document.getElementById('a-discount').value) || 0) / 100;
+
+    const segA = {
+      arpu: parseFloat(document.getElementById('segA-arpu').value) || 0,
+      cost: parseFloat(document.getElementById('segA-cost').value) || 0,
+      cac: parseFloat(document.getElementById('segA-cac').value) || 0,
+      churns: parseSchedule(document.getElementById('segA-churns').value, horizon)
+    };
+
+    const segB = {
+      arpu: parseFloat(document.getElementById('segB-arpu').value) || 0,
+      cost: parseFloat(document.getElementById('segB-cost').value) || 0,
+      cac: parseFloat(document.getElementById('segB-cac').value) || 0,
+      churns: parseSchedule(document.getElementById('segB-churns').value, horizon)
+    };
+
+    const marginA = (segA.arpu - segA.cost) * 12;
+    const marginB = (segB.arpu - segB.cost) * 12;
+
+    let ltvA = -segA.cac, ltvB = -segB.cac;
+    let probA = 1.0, probB = 1.0;
+    let rowsHTML = '';
+
+    for (let yr = 1; yr <= horizon; yr++) {
+      probA *= (1 - segA.churns[yr - 1]);
+      probB *= (1 - segB.churns[yr - 1]);
+
+      const expProfitA = marginA * probA;
+      const expProfitB = marginB * probB;
+
+      const pvA = expProfitA / Math.pow(1 + discount, yr);
+      const pvB = expProfitB / Math.pow(1 + discount, yr);
+
+      ltvA += pvA;
+      ltvB += pvB;
+
+      rowsHTML += `<tr>
+        <td>Year ${yr}</td>
+        <td>${(segA.churns[yr - 1] * 100).toFixed(1)}% / ${(segB.churns[yr - 1] * 100).toFixed(1)}%</td>
+        <td>${(probA * 100).toFixed(1)}% / ${(probB * 100).toFixed(1)}%</td>
+        <td>$${pvA.toFixed(2)}</td>
+        <td>$${pvB.toFixed(2)}</td>
+        <td><strong>+$${(pvA - pvB).toFixed(2)}</strong></td>
+      </tr>`;
+    }
+
+    const deltaLTV = ltvA - ltvB;
+
+    document.getElementById('metrics-output').innerHTML = `
+      <div class="metric-card accent">
+        <span>Segment A LTV</span>
+        <strong>$${ltvA.toFixed(2)}</strong>
+      </div>
+      <div class="metric-card">
+        <span>Segment B LTV</span>
+        <strong>$${ltvB.toFixed(2)}</strong>
+      </div>
+      <div class="metric-card success">
+        <span>Max Incentive / Delta</span>
+        <strong>$${deltaLTV.toFixed(2)}</strong>
+      </div>
+    `;
+
+    document.getElementById('table-output').innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>Year</th><th>Churn (A / B)</th><th>P(Active) (A / B)</th><th>PV Profit (A)</th><th>PV Profit (B)</th><th>PV Delta</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHTML}</tbody>
+      </table>`;
+
+    document.getElementById('results').style.display = 'block';
+  }
+
+  // Load basic mode by default
+  window.onload = calculateBasic;
+</script>
+</body>
+</html>
