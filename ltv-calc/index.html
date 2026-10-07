@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Lifetime Value (LTV) Calculator</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="calculator-container">
+    <h2>Customer Lifetime Value (LTV) Calculator</h2>
+    <p class="subtitle">Calculate net customer value based on revenue, costs, churn rate, and discount rate.</p>
+    
+    <form id="ltv-form">
+      <div class="input-group">
+        <label for="annualRevenue">Annual Revenue per Customer ($)</label>
+        <input type="number" id="annualRevenue" value="1800" step="0.01" required>
+      </div>
+
+      <div class="input-group">
+        <label for="productCost">Annual Product/Service Cost ($)</label>
+        <input type="number" id="productCost" value="1080" step="0.01" required>
+      </div>
+
+      <div class="input-group">
+        <label for="cac">Customer Acquisition Cost (CAC) ($)</label>
+        <input type="number" id="cac" value="50" step="0.01" required>
+      </div>
+
+      <div class="input-group">
+        <label for="churnRate">Annual Churn Rate (%)</label>
+        <input type="number" id="churnRate" value="30" step="0.1" min="0.1" max="100" required>
+      </div>
+
+      <div class="input-group">
+        <label for="discountRate">Annual Discount Rate (%)</label>
+        <input type="number" id="discountRate" value="10" step="0.1" min="0" required>
+      </div>
+
+      <div class="input-group">
+        <label for="timeHorizon">Time Horizon (Years)</label>
+        <input type="number" id="timeHorizon" value="5" min="1" max="20" required>
+      </div>
+
+      <button type="button" onclick="calculateLTV()">Calculate LTV</button>
+    </form>
+
+    <div class="results-container" id="results" style="display:none;">
+      <h3>Results</h3>
+      <div class="result-card">
+        <span>Simple LTV (Constant Horizon):</span>
+        <strong id="simpleLTV">$0.00</strong>
+      </div>
+      <div class="result-card highlight">
+        <span>Net Present Value LTV (Discounted):</span>
+        <strong id="npvLTV">$0.00</strong>
+      </div>
+      <div class="result-card">
+        <span>LTV : CAC Ratio:</span>
+        <strong id="ltvCacRatio">0.0x</strong>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
