@@ -1,9 +1,0 @@
-{
-  "manifest_version": 3,
-  "name": "Selection Reader Tab",
-  "version": "1.0",
-  "permissions": ["contextMenus", "storage"],
-  "background": {
-    "service_worker": "background.js"
-  }
-}
