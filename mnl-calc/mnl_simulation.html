@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multinomial Logit (MNL) Choice Simulation</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Gray-100 */
+        }
+        /* Custom slider styling for better aesthetics */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 2px solid currentColor;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #e5e7eb;
+            border-radius: 3px;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+    </style>
+</head>
+<body class="text-gray-800 p-4 md:p-8 min-h-screen flex flex-col">
+
+    <header class="max-w-6xl mx-auto w-full mb-8 text-center">
+        <h1 class="text-4xl font-bold text-gray-900 mb-6 tracking-tight">Multinomial Logit (MNL) Simulator</h1>
+        
+        <!-- Formula Section -->
+        <div class="flex justify-center mb-6">
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                <img src="formula.png" alt="formula.png" class="h-20 object-contain mx-auto mb-4">
+                <div class="text-xl font-serif text-gray-800 border-t pt-3">
+                    P<sub>i</sub>(j) = e<sup>x'<sub>ij</sub>&beta;</sup> / &sum;<sub>k&isin;C</sub> e<sup>x'<sub>ik</sub>&beta;</sup>
+                </div>
+            </div>
+        </div>
+
+        <p class="text-lg text-gray-600 max-w-3xl mx-auto">
+            Predict the choice probability by adjusting option features. In this model, <strong>x</strong> represents the independent variables (Price, Quality, Convenience) and <strong>&beta;</strong> represents the estimated parameters.
+        </p>
+    </header>
+
+    <main class="max-w-6xl mx-auto w-full flex-grow grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Controls Column (Left) -->
+        <div class="lg:col-span-5 space-y-6">
+            
+            <!-- Option A Controls -->
+            <div class="bg-white rounded-xl shadow-sm border-t-4 border-blue-500 p-5">
+                <h2 class="text-xl font-semibold text-blue-700 mb-4 flex items-center justify-between">
+                    <span>Option A (Premium)</span>
+                    <span id="util-a-display" class="text-sm font-mono bg-blue-100 px-2 py-1 rounded">x'&beta; = 0.00</span>
+                </h2>
+                
+                <div class="space-y-4 text-blue-600">
+                    <div>
+                        <div class="flex justify-between mb-1 text-sm font-medium text-gray-700">
+                            <label>Price ($) <span class="text-xs font-normal text-gray-500">(- effect)</span></label>
+                            <span id="val-a-price">80</span>
+                        </div>
+                        <input type="range" id="a-price" min="10" max="150" value="80" class="text-blue-500" oninput="updateSimulation()">
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-1 text-sm font-medium text-gray-700">
+                            <label>Quality (1-10) <span class="text-xs font-normal text-gray-500">(+ effect)</span></label>
+                            <span id="val-a-quality">8</span>
+                        </div>
+                        <input type="range" id="a-quality" min="1" max="10" value="8" step="0.5" class="text-blue-500" oninput="updateSimulation()">
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-1 text-sm font-medium text-gray-700">
+                            <label>Convenience (1-10) <span class="text-xs font-normal text-gray-500">(+ effect)</span></label>
+                            <span id="val-a-convenience">9</span>
+                        </div>
+                        <input type="range" id="a-convenience" min="1" max="10" value="9" step="0.5" class="text-blue-500" oninput="updateSimulation()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Option B Controls -->
+            <div class="bg-white rounded-xl shadow-sm border-t-4 border-emerald-500 p-5">
+                <h2 class="text-xl font-semibold text-emerald-700 mb-4 flex items-center justify-between">
+                    <span>Option B (Mid-Range)</span>
+                    <span id="util-b-display" class="text-sm font-mono bg-emerald-100 px-2 py-1 rounded">x'&beta; = 0.00</span>
+                </h2>
+                
+                <div class="space-y-4 text-emerald-600">
+                    <div>
+                        <div class="flex justify-between mb-1 text-sm font-medium text-gray-700">
+                            <label>Price ($) <span class="text-xs font-normal text-gray-500">(- effect)</span></label>
+                            <span id="val-b-price">50</span>
+                        </div>
+                        <input type="range" id="b-price" min="10" max="150" value="50" class="text-emerald-500" oninput="updateSimulation()">
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-1 text-sm font-medium text-gray-700">
+                            <label>Quality (1-10) <span class="text-xs font-normal text-gray-500">(+ effect)</span></label>
+                            <span id="val-b-quality">6</span>
+                        </div>
+                        <input type="range" id="b-quality" min="1" max="10" value="6" step="0.5" class="text-emerald-500" oninput="updateSimulation()">
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-1 text-sm font-medium text-gray-700">
+                            <label>Convenience (1-10) <span class="text-xs font-normal text-gray-500">(+ effect)</span></label>
+                            <span id="val-b-convenience">5</span>
+                        </div>
+                        <input type="range" id="b-convenience" min="1" max="10" value="5" step="0.5" class="text-emerald-500" oninput="updateSimulation()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Option C Controls -->
+            <div class="bg-white rounded-xl shadow-sm border-t-4 border-purple-500 p-5">
+                <h2 class="text-xl font-semibold text-purple-700 mb-4 flex items-center justify-between">
+                    <span>Option C (Budget)</span>
+                    <span id="util-c-display" class="text-sm font-mono bg-purple-100 px-2 py-1 rounded">x'&beta; = 0.00</span>
+                </h2>
+                
+                <div class="space-y-4 text-purple-600">
+                    <div>
+                        <div class="flex justify-between mb-1 text-sm font-medium text-gray-700">
+                            <label>Price ($) <span class="text-xs font-normal text-gray-500">(- effect)</span></label>
+                            <span id="val-c-price">25</span>
+                        </div>
+                        <input type="range" id="c-price" min="10" max="150" value="25" class="text-purple-500" oninput="updateSimulation()">
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-1 text-sm font-medium text-gray-700">
+                            <label>Quality (1-10) <span class="text-xs font-normal text-gray-500">(+ effect)</span></label>
+                            <span id="val-c-quality">4</span>
+                        </div>
+                        <input type="range" id="c-quality" min="1" max="10" value="4" step="0.5" class="text-purple-500" oninput="updateSimulation()">
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-1 text-sm font-medium text-gray-700">
+                            <label>Convenience (1-10) <span class="text-xs font-normal text-gray-500">(+ effect)</span></label>
+                            <span id="val-c-convenience">3</span>
+                        </div>
+                        <input type="range" id="c-convenience" min="1" max="10" value="3" step="0.5" class="text-purple-500" oninput="updateSimulation()">
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Visualization Column (Right) -->
+        <div class="lg:col-span-7 flex flex-col space-y-6">
+            
+            <div class="bg-white rounded-xl shadow-sm p-6 flex-grow flex flex-col">
+                <h3 class="text-xl font-bold text-gray-800 mb-2">Choice Probability (P<sub>i</sub>)</h3>
+                <p class="text-sm text-gray-500 mb-6">Real-time prediction of choice based on current attributes and &beta; parameters.</p>
+                
+                <div class="relative flex-grow w-full flex items-center justify-center min-h-[300px]">
+                    <canvas id="probabilityChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Mathematical Breakdown Panel -->
+            <div class="bg-gray-800 text-gray-100 rounded-xl shadow-sm p-6">
+                <h3 class="text-lg font-semibold mb-4 text-gray-300 border-b border-gray-700 pb-2">Behind the Math</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm font-mono">
+                    <div>
+                        <h4 class="text-blue-400 font-bold mb-1">Option A</h4>
+                        <p>Util (x'&beta;): <span id="math-util-a">0</span></p>
+                        <p>Exp(x'&beta;): <span id="math-exp-a">0</span></p>
+                    </div>
+                    <div>
+                        <h4 class="text-emerald-400 font-bold mb-1">Option B</h4>
+                        <p>Util (x'&beta;): <span id="math-util-b">0</span></p>
+                        <p>Exp(x'&beta;): <span id="math-exp-b">0</span></p>
+                    </div>
+                    <div>
+                        <h4 class="text-purple-400 font-bold mb-1">Option C</h4>
+                        <p>Util (x'&beta;): <span id="math-util-c">0</span></p>
+                        <p>Exp(x'&beta;): <span id="math-exp-c">0</span></p>
+                    </div>
+                </div>
+                <div class="mt-4 pt-4 border-t border-gray-700 text-sm font-mono text-center">
+                    Sum of Exp(x'&beta;) : &sum; = <span id="math-sum-exp" class="font-bold text-white">0</span>
+                </div>
+            </div>
+            
+        </div>
+    </main>
+
+    <script>
+        // Constants representing the 'beta' parameters in our MNL utility function
+        // Utility (x'B) = Beta1*Price + Beta2*Quality + Beta3*Convenience + AlternativeSpecificConstant(ASC)
+        const BETA_PRICE = -0.05; // Price has a negative impact on utility
+        const BETA_QUALITY = 0.4;  // Quality has a positive impact
+        const BETA_CONVENIENCE = 0.3; // Convenience has a positive impact
+        
+        // Alternative Specific Constants (Base preferences irrespective of attributes)
+        const ASC_A = 0; 
+        const ASC_B = 0;
+        const ASC_C = 0;
+
+        let probabilityChart;
+
+        // Initialize Chart.js
+        function initChart() {
+            const ctx = document.getElementById('probabilityChart').getContext('2d');
+            
+            Chart.register({
+                id: 'topLabels',
+                afterDatasetsDraw(chart, args, pluginOptions) {
+                    const { ctx } = chart;
+                    chart.data.datasets.forEach((dataset, i) => {
+                        const meta = chart.getDatasetMeta(i);
+                        meta.data.forEach((bar, index) => {
+                            const data = dataset.data[index];
+                            ctx.fillStyle = '#1f2937'; 
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'bottom';
+                            ctx.font = 'bold 16px Inter, sans-serif';
+                            ctx.fillText((data * 100).toFixed(1) + '%', bar.x, bar.y - 5);
+                        });
+                    });
+                }
+            });
+
+            probabilityChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Option A', 'Option B', 'Option C'],
+                    datasets: [{
+                        label: 'Choice Probability',
+                        data: [0, 0, 0],
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.7)', // Blue
+                            'rgba(16, 185, 129, 0.7)', // Emerald
+                            'rgba(168, 85, 247, 0.7)'  // Purple
+                        ],
+                        borderColor: [
+                            'rgb(37, 99, 235)',
+                            'rgb(5, 150, 105)',
+                            'rgb(147, 51, 234)'
+                        ],
+                        borderWidth: 2,
+                        borderRadius: 6,
+                        borderSkipped: false,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 1.0,
+                            ticks: {
+                                callback: function(value) {
+                                    return (value * 100).toFixed(0) + '%';
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Probability P_i(j)',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += (context.parsed.y * 100).toFixed(2) + '%';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 300 
+                    }
+                }
+            });
+        }
+
+        // Calculate Utility for a single option
+        function calculateUtility(price, quality, convenience, asc) {
+            return (BETA_PRICE * price) + (BETA_QUALITY * quality) + (BETA_CONVENIENCE * convenience) + asc;
+        }
+
+        // Main Simulation Update Logic
+        function updateSimulation() {
+            // 1. Gather Inputs
+            const aPrice = parseFloat(document.getElementById('a-price').value);
+            const aQual = parseFloat(document.getElementById('a-quality').value);
+            const aConv = parseFloat(document.getElementById('a-convenience').value);
+
+            const bPrice = parseFloat(document.getElementById('b-price').value);
+            const bQual = parseFloat(document.getElementById('b-quality').value);
+            const bConv = parseFloat(document.getElementById('b-convenience').value);
+
+            const cPrice = parseFloat(document.getElementById('c-price').value);
+            const cQual = parseFloat(document.getElementById('c-quality').value);
+            const cConv = parseFloat(document.getElementById('c-convenience').value);
+
+            // Update UI Labels for Sliders
+            document.getElementById('val-a-price').innerText = '$' + aPrice;
+            document.getElementById('val-a-quality').innerText = aQual;
+            document.getElementById('val-a-convenience').innerText = aConv;
+            
+            document.getElementById('val-b-price').innerText = '$' + bPrice;
+            document.getElementById('val-b-quality').innerText = bQual;
+            document.getElementById('val-b-convenience').innerText = bConv;
+            
+            document.getElementById('val-c-price').innerText = '$' + cPrice;
+            document.getElementById('val-c-quality').innerText = cQual;
+            document.getElementById('val-c-convenience').innerText = cConv;
+
+            // 2. Calculate Utilities (x'Beta)
+            const vA = calculateUtility(aPrice, aQual, aConv, ASC_A);
+            const vB = calculateUtility(bPrice, bQual, bConv, ASC_B);
+            const vC = calculateUtility(cPrice, cQual, cConv, ASC_C);
+
+            // Update UI Utilities
+            document.getElementById('util-a-display').innerText = `x'\u03B2 = ${vA.toFixed(2)}`;
+            document.getElementById('util-b-display').innerText = `x'\u03B2 = ${vB.toFixed(2)}`;
+            document.getElementById('util-c-display').innerText = `x'\u03B2 = ${vC.toFixed(2)}`;
+
+            document.getElementById('math-util-a').innerText = vA.toFixed(3);
+            document.getElementById('math-util-b').innerText = vB.toFixed(3);
+            document.getElementById('math-util-c').innerText = vC.toFixed(3);
+
+            // 3. Calculate Exponentials ( e^(x'Beta) )
+            const expA = Math.exp(vA);
+            const expB = Math.exp(vB);
+            const expC = Math.exp(vC);
+
+            document.getElementById('math-exp-a').innerText = expA.toFixed(3);
+            document.getElementById('math-exp-b').innerText = expB.toFixed(3);
+            document.getElementById('math-exp-c').innerText = expC.toFixed(3);
+
+            // 4. Calculate Sum of Exponentials
+            const sumExp = expA + expB + expC;
+            document.getElementById('math-sum-exp').innerText = sumExp.toFixed(3);
+
+            // 5. Calculate Probabilities (P = e^(x'Beta) / Sum(e^(x'Beta)))
+            const pA = expA / sumExp;
+            const pB = expB / sumExp;
+            const pC = expC / sumExp;
+
+            // 6. Update Chart
+            if(probabilityChart) {
+                probabilityChart.data.datasets[0].data = [pA, pB, pC];
+                probabilityChart.update();
+            }
+        }
+
+        // Initialize application on load
+        window.onload = function() {
+            initChart();
+            updateSimulation(); 
+        };
+    </script>
+</body>
+</html>
